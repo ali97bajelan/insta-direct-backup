@@ -49,6 +49,33 @@ class DirectManager:
         while self.get_more_threads():
             pass
 
+    def send_direct_item(self, item_type, thread, **options):
+        data = {
+            'client_context': self.bot.uuid,
+            # 'action': 'send_item'
+        }
+
+        url = 'direct_v2/threads/broadcast/{}/'.format(item_type)
+        text = options.get('text', '')
+        text = "in the name of God"
+        if item_type == 'link':
+            data['link_text'] = text
+            data['link_urls'] = self.bot.json.dumps(options.get('urls'))
+        elif item_type == 'text':
+            data['text'] = text
+        elif item_type == 'media_share':
+            data['text'] = text
+            data['media_type'] = options.get('media_type', 'photo')
+            data['media_id'] = options.get('media_id', '')
+        elif item_type == 'hashtag':
+            data['text'] = text
+            data['hashtag'] = options.get('hashtag', '')
+        elif item_type == 'profile':
+            data['text'] = text
+            data['profile_user_id'] = options.get('profile_user_id')
+        data['thread_ids'] = thread
+        return self.bot.send_request(url, data)
+
     def get_chat_of_thread(self, thread_title):
         next_page = ''
         text = ''
@@ -66,39 +93,69 @@ class DirectManager:
                 if sender_id == person_id:
                     sender_name = person_username
                 else:
-                    sender_name = "you"
+                    sender_name = "You"
                 type = message['item_type']  # str
                 if type == "like":
                     msg = message['like']
                     text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
 
-                if type == "text":
+                elif type == "media":
+                    msg = message['media']['image_versions2']['candidates'][0]['url']
+                    text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
+
+                elif type == "media_share":
+                    if message['media_share']['media_type'] == 2:
+                        msg = message['media_share']['image_versions2']['candidates'][0]['url']
+                    if message['media_share']['media_type'] == 8:
+                        msg = message['media_share']['carousel_media'][0]['image_versions2']['candidates'][0]['url']
+                    text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
+
+                elif type == "text":
                     msg = message['text']
                     text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
 
-                if type == "profile":
+                elif type == "reel_share":
+                    msg = message['reel_share']['text']
+                    text = sender_name + "  " + time + "\n" + "Reply on story: " + msg + "\n\n" + text
+
+                elif type == "story_share":
+                    msg = message['story_share']['title']
+                    text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
+
+                elif type == "raven_media":
+                    pass
+
+
+                elif type == "profile":
                     msg = message['profile']['username']
                     text = sender_name + "  " + time + "\n" + "https://www.instagram.com/" + msg + "\n\n" + text
 
-                if type == "link":
+                elif type == "link":
                     msg = message['link']['text']
                     text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
 
+                elif type == "placeholder":
+                    msg = message['placeholder']['message']
+                    text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
+
+
+                else:
+                    print('*******')
+                    print(message)
+                    print('*******')
+
             if not chat['thread']['has_older']:
+                file = open("backup.txt", "w+", encoding="utf-8")
+                file.write(text)
                 print(text)
                 return
 
             next_page = chat['thread']['oldest_cursor']
 
 
-bot = Instagram('username', 'pass')
+bot = Instagram("username", "password")
 bot.login()
 direct_manager = DirectManager(bot)
-# direct  = bot.direct_list()
-# direct_manager.get_all_threads()
-direct_manager.find_thread_id("ali.bajelan")
-direct_manager.get_chat_of_thread("ali.bajelan")
-
+direct_manager.find_thread_id("target_username")
+direct_manager.get_chat_of_thread("target_username")
 bot.logout()
-
-# to do = reactions
