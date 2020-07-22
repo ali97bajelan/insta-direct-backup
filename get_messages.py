@@ -79,12 +79,12 @@ class DirectManager:
     def get_chat_of_thread(self, thread_title):
         next_page = ''
         text = ''
+        you = input("Enter your name ")
         while True:
             chat = self.bot.direct_thread(self.threads[thread_title], next_page)
             person_id = chat['thread']['users'][0]['pk']
             person_username = chat['thread']['users'][0]['username']
             messages = chat['thread']['items']
-
             for message in messages:
                 time = message['timestamp']  # int
                 time //= 1000000
@@ -93,7 +93,7 @@ class DirectManager:
                 if sender_id == person_id:
                     sender_name = person_username
                 else:
-                    sender_name = "You"
+                    sender_name = you
                 type = message['item_type']  # str
                 if type == "like":
                     msg = message['like']
@@ -119,6 +119,7 @@ class DirectManager:
                     text = sender_name + "  " + time + "\n" + "Reply on story: " + msg + "\n\n" + text
 
                 elif type == "story_share":
+                    # if message['story_share'].
                     msg = message['story_share']['title']
                     text = sender_name + "  " + time + "\n" + msg + "\n\n" + text
 
@@ -145,17 +146,19 @@ class DirectManager:
                     print('*******')
 
             if not chat['thread']['has_older']:
-                file = open("backup.txt", "w+", encoding="utf-8")
+                name = input("enter the name of file")
+                file = open("{}.txt".format(name), "w+", encoding="utf-8")
                 file.write(text)
-                print(text)
+                # print(text)
                 return
 
             next_page = chat['thread']['oldest_cursor']
 
 
+
 bot = Instagram("username", "password")
 bot.login()
 direct_manager = DirectManager(bot)
-direct_manager.find_thread_id("target_username")
-direct_manager.get_chat_of_thread("target_username")
+direct_manager.find_thread_id("contact")
+direct_manager.get_chat_of_thread("contact")
 bot.logout()
